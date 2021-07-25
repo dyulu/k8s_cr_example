@@ -1,0 +1,7 @@
+apiVersion: covid.covid.tracker.io/v1alpha1
+kind: CovidData
+metadata:
+  name: coviddata-sample
+spec:
+  # Add fields here
+  foo: bar

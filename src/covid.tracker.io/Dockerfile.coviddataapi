@@ -1,0 +1,20 @@
+# docker build -t covid-data-api -f Dockerfile.coviddataapi .
+# docker run --network=host covid-data-api
+#
+FROM golang:1.15 as builder
+
+COPY . /src
+WORKDIR /src/cmd/access-covid-data
+# RUN go env
+# Set CGO_ENABLED=0 so GO will build statically linked binary
+# Otherwise, can have issues like
+# standard_init_linux.go:228: exec user process caused: no such file or directory
+RUN CGO_ENABLED=0 go build -o access-covid-data main.go
+
+FROM alpine
+WORKDIR /
+COPY --from=builder /src/cmd/access-covid-data/access-covid-data .
+
+EXPOSE 10000
+ENTRYPOINT ["/access-covid-data"]
+

@@ -1,0 +1,450 @@
+==== On a Ubuntu VM, started minikube
+
+root@MyVM:~# minikube status
+minikube
+type: Control Plane
+host: Running
+kubelet: Running
+apiserver: Running
+kubeconfig: Configured
+
+# kubectl get nodes
+NAME              STATUS   ROLES                  AGE    VERSION
+MyVM   Ready    control-plane,master   168m   v1.21.2
+
+==== Installed GO and operator-sdk
+
+export PATH=$PATH:/usr/local/go/bin
+go version
+
+# ls /usr/local/go/bin
+go  gofmt
+# ls /usr/local/bin
+kubectl  minikube  operator-sdk
+
+# export GO111MODULE=on
+# export GOSUMDB=off
+# export CGO_ENABLED=0
+# go env
+
+# operator-sdk version
+operator-sdk version: "v1.7.2", commit: "6db9787d4e9ff63f344e23bfa387133112bda56b", kubernetes version: "1.19.4", go version: "go1.15.5", GOOS: "linux", GOARCH: "amd64"
+
+====
+
+mkdir -p k8s_cr_example/src/covid.tracker.io
+cd k8s_cr_example/src/covid.tracker.io
+export GOPATH=$PWD/../..
+operator-sdk init --domain covid.tracker.io --project-name covid-tracker
+operator-sdk create api --version v1alpha1 --group covid --kind CovidTrackerDeployment --controller  --resource --verbose
+operator-sdk create api --version v1alpha1 --group covid --kind CovidData  --resource --verbose    # Create Controller [y/n]: n
+
+make manifests
+make generate
+make install run
+make undeploy
+
+kubectl get crds -A
+kubectl get all -n my_namespace -o wide
+kubectl apply -f config/samples/covid_v1alpha1_covidtrackerdeployment.yaml
+kubectl get covidtrackerdeployments.covid.covid.tracker.io
+kubectl describe covidtrackerdeployments.covid.covid.tracker.io covidtrackerdeployment-sample
+kubectl delete daemonset.apps/covidcovidtrackerdeployment-sample
+
+export KUBECONFIG=~/.kube/config
+kubectl apply -f client/coviddata_rbac.yaml
+cmd/publish-covid-data/publish-covid-data -state Arizona -covidCases 111111
+kubectl get coviddata.covid.covid.tracker.io
+kubectl describe coviddata.covid.covid.tracker.io coviddata-nodeid
+kubectl delete coviddata.covid.covid.tracker.io coviddata-nodeid
+
+curl http://localhost:10000/
+curl http://localhost:10000/covid/data/list
+curl -d "$(jq . cmd/access-covid-data/covid_data_payload.json)" -X POST -H 'Content-Type: application/json' http://localhost:10000/covid/data
+curl -X DELETE http://localhost:10000/covid/data/clear
+
+vim api/v1alpha1/covidtrackerdeployment_types.go
+vim api/v1alpha1/coviddata_types.go
+vim controllers/covidtrackerdeployment_controller.go
+
+====
+
+root@MyVM:~/k8s_cr_example/src/covid.tracker.io# export GOPATH=$PWD/../..
+root@MyVM:~/k8s_cr_example/src/covid.tracker.io# operator-sdk init --domain covid.tracker.io --project-name covid-tracker
+Writing kustomize manifests for you to edit...
+Writing scaffold for you to edit...
+Get controller runtime:
+$ go get sigs.k8s.io/controller-runtime@v0.8.3
+go: downloading sigs.k8s.io/controller-runtime v0.8.3
+go: downloading k8s.io/apimachinery v0.20.2
+go: downloading github.com/go-logr/logr v0.3.0
+go: downloading github.com/prometheus/client_golang v1.7.1
+go: downloading k8s.io/client-go v0.20.2
+go: downloading k8s.io/apiextensions-apiserver v0.20.1
+go: downloading github.com/prometheus/common v0.10.0
+go: downloading github.com/prometheus/procfs v0.2.0
+go: downloading github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369
+go: downloading golang.org/x/sys v0.0.0-20201112073958-5cba982894dd
+go: downloading sigs.k8s.io/structured-merge-diff/v4 v4.0.2
+go: downloading github.com/golang/protobuf v1.4.3
+go: downloading k8s.io/klog/v2 v2.4.0
+go: downloading gopkg.in/yaml.v2 v2.3.0
+go: downloading github.com/beorn7/perks v1.0.1
+go: downloading github.com/google/gofuzz v1.1.0
+go: downloading github.com/cespare/xxhash v1.1.0
+go: downloading google.golang.org/protobuf v1.25.0
+go: downloading k8s.io/api v0.20.2
+go: downloading github.com/json-iterator/go v1.1.10
+go: downloading k8s.io/utils v0.0.0-20210111153108-fddb29f9d009
+go: downloading github.com/cespare/xxhash/v2 v2.1.1
+go: downloading github.com/imdario/mergo v0.3.10
+go: downloading github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
+go: downloading k8s.io/component-base v0.20.2
+go: downloading github.com/spf13/pflag v1.0.5
+go: downloading github.com/evanphx/json-patch v4.9.0+incompatible
+go: downloading golang.org/x/crypto v0.0.0-20201002170205-7f63de1d35b0
+go: downloading golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
+go: downloading gomodules.xyz/jsonpatch/v2 v2.1.0
+go: downloading github.com/gogo/protobuf v1.3.1
+go: downloading github.com/modern-go/reflect2 v1.0.1
+go: downloading github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e
+go: downloading github.com/googleapis/gnostic v0.5.1
+go: downloading golang.org/x/time v0.0.0-20200630173020-3af7569d3a1e
+go: downloading github.com/prometheus/client_model v0.2.0
+go: downloading k8s.io/kube-openapi v0.0.0-20201113171705-d219536bb9fd
+go: downloading golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+go: downloading gopkg.in/inf.v0 v0.9.1
+go: downloading github.com/pkg/errors v0.9.1
+go: downloading github.com/hashicorp/golang-lru v0.5.4
+go: downloading github.com/davecgh/go-spew v1.1.1
+go: downloading github.com/fsnotify/fsnotify v1.4.9
+go: downloading github.com/google/uuid v1.1.2
+go: downloading google.golang.org/appengine v1.6.6
+go: downloading github.com/google/go-cmp v0.5.2
+go: downloading sigs.k8s.io/yaml v1.2.0
+go: downloading gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776
+go: downloading golang.org/x/text v0.3.4
+Update dependencies:
+$ go mod tidy
+go: downloading github.com/onsi/gomega v1.10.2
+go: downloading github.com/onsi/ginkgo v1.14.1
+go: downloading github.com/stretchr/testify v1.6.1
+go: downloading go.uber.org/zap v1.15.0
+go: downloading go.uber.org/goleak v1.1.10
+go: downloading golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
+go: downloading cloud.google.com/go v0.54.0
+go: downloading github.com/Azure/go-autorest v14.2.0+incompatible
+go: downloading github.com/Azure/go-autorest/autorest v0.11.1
+go: downloading github.com/go-logr/zapr v0.2.0
+go: downloading github.com/pmezard/go-difflib v1.0.0
+go: downloading github.com/Azure/go-autorest/autorest/adal v0.9.5
+go: downloading golang.org/x/lint v0.0.0-20200302205851-738671d3881b
+go: downloading go.uber.org/atomic v1.6.0
+go: downloading gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15
+go: downloading github.com/form3tech-oss/jwt-go v3.2.2+incompatible
+go: downloading github.com/Azure/go-autorest/logger v0.2.0
+go: downloading github.com/Azure/go-autorest/autorest/mocks v0.4.1
+go: downloading honnef.co/go/tools v0.0.1-2020.1.3
+go: downloading go.uber.org/multierr v1.5.0
+go: downloading github.com/kr/pretty v0.2.0
+go: downloading github.com/Azure/go-autorest/autorest/date v0.3.0
+go: downloading github.com/Azure/go-autorest/tracing v0.6.0
+go: downloading github.com/nxadm/tail v1.4.4
+go: downloading golang.org/x/tools v0.0.0-20200616133436-c1934b75d054
+go: downloading github.com/kr/text v0.1.0
+go: downloading go.uber.org/tools v0.0.0-20190618225709-2cfd321de3ee
+go: downloading gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7
+go: downloading github.com/BurntSushi/toml v0.3.1
+go: downloading golang.org/x/mod v0.3.0
+Next: define a resource with:
+$ operator-sdk create api
+
+root@MyVM:~/k8s_cr_example# ls
+pkg  src
+root@MyVM:~/k8s_cr_example# ls pkg
+mod
+root@MyVM:~/k8s_cr_example# ls pkg/mod
+cache  cloud.google.com  github.com  golang.org  gomodules.xyz  google.golang.org  gopkg.in  go.uber.org  honnef.co  k8s.io  sigs.k8s.io
+
+root@MyVM:~/k8s_cr_example/src/covid.tracker.io# operator-sdk create api --version v1alpha1 --group covid --kind CovidTrackerDeployment --controller  --resource --verbose
+DEBU[0002] Debug logging is set                         
+Writing kustomize manifests for you to edit...
+Writing scaffold for you to edit...
+api/v1alpha1/covidtrackerdeployment_types.go
+controllers/covidtrackerdeployment_controller.go
+Update dependencies:
+$ go mod tidy
+Running make:
+$ make generate
+go: creating new go.mod: module tmp
+Downloading sigs.k8s.io/controller-tools/cmd/controller-gen@v0.4.1
+go: downloading sigs.k8s.io/controller-tools v0.4.1
+go: found sigs.k8s.io/controller-tools/cmd/controller-gen in sigs.k8s.io/controller-tools v0.4.1
+go: downloading golang.org/x/tools v0.0.0-20200616195046-dc31b401abb5
+go: downloading github.com/fatih/color v1.7.0
+go: downloading k8s.io/api v0.18.2
+go: downloading gopkg.in/yaml.v3 v3.0.0-20190905181640-827449938966
+go: downloading k8s.io/apiextensions-apiserver v0.18.2
+go: downloading github.com/spf13/cobra v1.0.0
+go: downloading k8s.io/apimachinery v0.18.2
+go: downloading github.com/mattn/go-colorable v0.1.2
+go: downloading k8s.io/utils v0.0.0-20200324210504-a9aa75ae1b89
+go: downloading github.com/mattn/go-isatty v0.0.8
+go: downloading github.com/inconshreveable/mousetrap v1.0.0
+go: downloading k8s.io/klog v1.0.0
+go: downloading sigs.k8s.io/structured-merge-diff/v3 v3.0.0
+go: downloading github.com/gobuffalo/flect v0.2.0
+go: downloading gopkg.in/yaml.v2 v2.2.8
+go: downloading golang.org/x/net v0.0.0-20200226121028-0de0cce0169b
+go: downloading golang.org/x/sys v0.0.0-20191022100944-742c48ecaeb7
+go: downloading github.com/json-iterator/go v1.1.8
+go: downloading golang.org/x/text v0.3.2
+go: downloading golang.org/x/mod v0.2.0
+go: downloading golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543
+k8s.io/apimachinery/pkg/selection
+k8s.io/apimachinery/pkg/util/sets
+github.com/spf13/cobra
+github.com/gobuffalo/flect
+k8s.io/apimachinery/pkg/api/resource
+k8s.io/apimachinery/third_party/forked/golang/reflect
+k8s.io/apimachinery/pkg/conversion
+k8s.io/apimachinery/pkg/fields
+k8s.io/apimachinery/pkg/util/errors
+k8s.io/klog
+k8s.io/apimachinery/pkg/util/validation/field
+k8s.io/apimachinery/pkg/util/validation
+k8s.io/apimachinery/pkg/conversion/queryparams
+k8s.io/apimachinery/pkg/labels
+k8s.io/apimachinery/pkg/runtime/schema
+k8s.io/apimachinery/pkg/util/json
+k8s.io/apimachinery/pkg/util/naming
+github.com/json-iterator/go
+k8s.io/apimachinery/pkg/util/runtime
+gopkg.in/yaml.v2
+k8s.io/apimachinery/pkg/types
+k8s.io/apimachinery/pkg/util/intstr
+golang.org/x/text/transform
+golang.org/x/text/unicode/bidi
+golang.org/x/text/secure/bidirule
+sigs.k8s.io/structured-merge-diff/v3/value
+golang.org/x/text/unicode/norm
+golang.org/x/net/idna
+k8s.io/apimachinery/pkg/runtime
+golang.org/x/net/http/httpguts
+golang.org/x/net/http2/hpack
+golang.org/x/net/http2
+k8s.io/utils/pointer
+golang.org/x/tools/go/internal/gcimporter
+golang.org/x/tools/go/gcexportdata
+golang.org/x/mod/semver
+golang.org/x/tools/internal/event/label
+golang.org/x/tools/internal/event/keys
+k8s.io/apimachinery/pkg/util/net
+golang.org/x/tools/internal/event/core
+golang.org/x/tools/internal/event
+golang.org/x/tools/internal/gocommand
+golang.org/x/tools/go/internal/packagesdriver
+golang.org/x/tools/internal/packagesinternal
+k8s.io/apimachinery/pkg/watch
+golang.org/x/tools/internal/typesinternal
+golang.org/x/xerrors/internal
+golang.org/x/xerrors
+k8s.io/apimachinery/pkg/apis/meta/v1
+golang.org/x/tools/go/packages
+sigs.k8s.io/controller-tools/pkg/loader
+sigs.k8s.io/controller-tools/pkg/markers
+sigs.k8s.io/yaml
+sigs.k8s.io/controller-tools/pkg/genall
+sigs.k8s.io/controller-tools/pkg/version
+sigs.k8s.io/controller-tools/pkg/deepcopy
+sigs.k8s.io/controller-tools/pkg/genall/help
+golang.org/x/sys/unix
+k8s.io/apiextensions-apiserver/pkg/apis/apiextensions
+k8s.io/apimachinery/pkg/api/equality
+k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1
+k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1
+sigs.k8s.io/controller-tools/pkg/crd/markers
+github.com/mattn/go-isatty
+github.com/mattn/go-colorable
+github.com/fatih/color
+sigs.k8s.io/controller-tools/pkg/crd
+sigs.k8s.io/controller-tools/pkg/genall/help/pretty
+k8s.io/api/rbac/v1
+gopkg.in/yaml.v3
+sigs.k8s.io/controller-tools/pkg/rbac
+k8s.io/api/admissionregistration/v1
+sigs.k8s.io/controller-tools/pkg/schemapatcher/internal/yaml
+sigs.k8s.io/controller-tools/pkg/schemapatcher
+k8s.io/api/admissionregistration/v1beta1
+sigs.k8s.io/controller-tools/pkg/webhook
+sigs.k8s.io/controller-tools/cmd/controller-gen
+/root/k8s_cr_example/src/covid.tracker.io/bin/controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
+
+root@MyVM:~/k8s_cr_example/src/covid.tracker.io# operator-sdk create api --version v1alpha1 --group covid --kind CovidData  --resource --verbose
+DEBU[0002] Debug logging is set                         
+Create Controller [y/n]
+n
+Writing kustomize manifests for you to edit...
+Writing scaffold for you to edit...
+api/v1alpha1/coviddata_types.go
+Update dependencies:
+$ go mod tidy
+Running make:
+$ make generate
+/root/k8s_cr_example/src/covid.tracker.io/bin/controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
+root@MyVM:~/k8s_cr_example/src/covid.tracker.io# tree
+.
+|-- api
+|   `-- v1alpha1
+|       |-- coviddata_types.go
+|       |-- covidtrackerdeployment_types.go
+|       |-- groupversion_info.go
+|       `-- zz_generated.deepcopy.go
+|-- bin
+|   `-- controller-gen
+|-- config
+|   |-- crd
+|   |   |-- kustomization.yaml
+|   |   |-- kustomizeconfig.yaml
+|   |   `-- patches
+|   |       |-- cainjection_in_coviddata.yaml
+|   |       |-- cainjection_in_covidtrackerdeployments.yaml
+|   |       |-- webhook_in_coviddata.yaml
+|   |       `-- webhook_in_covidtrackerdeployments.yaml
+|   |-- default
+|   |   |-- kustomization.yaml
+|   |   |-- manager_auth_proxy_patch.yaml
+|   |   `-- manager_config_patch.yaml
+|   |-- manager
+|   |   |-- controller_manager_config.yaml
+|   |   |-- kustomization.yaml
+|   |   `-- manager.yaml
+|   |-- manifests
+|   |   `-- kustomization.yaml
+|   |-- prometheus
+|   |   |-- kustomization.yaml
+|   |   `-- monitor.yaml
+|   |-- rbac
+|   |   |-- auth_proxy_client_clusterrole.yaml
+|   |   |-- auth_proxy_role_binding.yaml
+|   |   |-- auth_proxy_role.yaml
+|   |   |-- auth_proxy_service.yaml
+|   |   |-- coviddata_editor_role.yaml
+|   |   |-- coviddata_viewer_role.yaml
+|   |   |-- covidtrackerdeployment_editor_role.yaml
+|   |   |-- covidtrackerdeployment_viewer_role.yaml
+|   |   |-- kustomization.yaml
+|   |   |-- leader_election_role_binding.yaml
+|   |   |-- leader_election_role.yaml
+|   |   |-- role_binding.yaml
+|   |   `-- service_account.yaml
+|   |-- samples
+|   |   |-- covid_v1alpha1_coviddata.yaml
+|   |   |-- covid_v1alpha1_covidtrackerdeployment.yaml
+|   |   `-- kustomization.yaml
+|   `-- scorecard
+|       |-- bases
+|       |   `-- config.yaml
+|       |-- kustomization.yaml
+|       `-- patches
+|           |-- basic.config.yaml
+|           `-- olm.config.yaml
+|-- controllers
+|   |-- covidtrackerdeployment_controller.go
+|   `-- suite_test.go
+|-- Dockerfile
+|-- go.mod
+|-- go.sum
+|-- hack
+|   `-- boilerplate.go.txt
+|-- main.go
+|-- Makefile
+`-- PROJECT
+
+17 directories, 49 files
+
+root@MyVM:~/k8s_cr_example/src/covid.tracker.io# make manifests
+/root/k8s_cr_example/src/covid.tracker.io/bin/controller-gen "crd:trivialVersions=true,preserveUnknownFields=false" rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+root@MyVM:~/k8s_cr_example/src/covid.tracker.io# make generate 
+/root/k8s_cr_example/src/covid.tracker.io/bin/controller-gen object:headerFile="hack/boilerplate.go.txt" paths="./..."
+root@MyVM:~/k8s_cr_example/src/covid.tracker.io# make install run
+
+...
+
+
+root@MyVM:~/k8s_cr_example/src/covid.tracker.io# tree
+.
+|-- api
+|   `-- v1alpha1
+|       |-- coviddata_types.go
+|       |-- covidtrackerdeployment_types.go
+|       |-- groupversion_info.go
+|       `-- zz_generated.deepcopy.go
+|-- bin
+|   |-- controller-gen
+|   `-- kustomize
+|-- config
+|   |-- crd
+|   |   |-- bases
+|   |   |   |-- covid.covid.tracker.io_coviddata.yaml
+|   |   |   `-- covid.covid.tracker.io_covidtrackerdeployments.yaml
+|   |   |-- kustomization.yaml
+|   |   |-- kustomizeconfig.yaml
+|   |   `-- patches
+|   |       |-- cainjection_in_coviddata.yaml
+|   |       |-- cainjection_in_covidtrackerdeployments.yaml
+|   |       |-- webhook_in_coviddata.yaml
+|   |       `-- webhook_in_covidtrackerdeployments.yaml
+|   |-- default
+|   |   |-- kustomization.yaml
+|   |   |-- manager_auth_proxy_patch.yaml
+|   |   `-- manager_config_patch.yaml
+|   |-- manager
+|   |   |-- controller_manager_config.yaml
+|   |   |-- kustomization.yaml
+|   |   `-- manager.yaml
+|   |-- manifests
+|   |   `-- kustomization.yaml
+|   |-- prometheus
+|   |   |-- kustomization.yaml
+|   |   `-- monitor.yaml
+|   |-- rbac
+|   |   |-- auth_proxy_client_clusterrole.yaml
+|   |   |-- auth_proxy_role_binding.yaml
+|   |   |-- auth_proxy_role.yaml
+|   |   |-- auth_proxy_service.yaml
+|   |   |-- coviddata_editor_role.yaml
+|   |   |-- coviddata_viewer_role.yaml
+|   |   |-- covidtrackerdeployment_editor_role.yaml
+|   |   |-- covidtrackerdeployment_viewer_role.yaml
+|   |   |-- kustomization.yaml
+|   |   |-- leader_election_role_binding.yaml
+|   |   |-- leader_election_role.yaml
+|   |   |-- role_binding.yaml
+|   |   |-- role.yaml
+|   |   `-- service_account.yaml
+|   |-- samples
+|   |   |-- covid_v1alpha1_coviddata.yaml
+|   |   |-- covid_v1alpha1_covidtrackerdeployment.yaml
+|   |   `-- kustomization.yaml
+|   `-- scorecard
+|       |-- bases
+|       |   `-- config.yaml
+|       |-- kustomization.yaml
+|       `-- patches
+|           |-- basic.config.yaml
+|           `-- olm.config.yaml
+|-- controllers
+|   |-- covidtrackerdeployment_controller.go
+|   `-- suite_test.go
+|-- Dockerfile
+|-- go.mod
+|-- go.sum
+|-- hack
+|   `-- boilerplate.go.txt
+|-- main.go
+|-- Makefile
+`-- PROJECT
+
+18 directories, 53 files
+

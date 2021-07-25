@@ -1,0 +1,24 @@
+# permissions for end users to edit covidtrackerdeployments.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: covidtrackerdeployment-editor-role
+rules:
+- apiGroups:
+  - covid.covid.tracker.io
+  resources:
+  - covidtrackerdeployments
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - covid.covid.tracker.io
+  resources:
+  - covidtrackerdeployments/status
+  verbs:
+  - get

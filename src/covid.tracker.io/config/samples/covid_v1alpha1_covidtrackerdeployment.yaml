@@ -1,0 +1,9 @@
+apiVersion: covid.covid.tracker.io/v1alpha1
+kind: CovidTrackerDeployment
+metadata:
+  name: covidtrackerdeployment-sample
+spec:
+  # The container image is built separately and made present on k8s nodes or ready for download from there.
+  images:
+    covidDataAPI: covid-data-api:latest
+  currentControlPlaneVersion: 0.0.1

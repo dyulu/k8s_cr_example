@@ -1,0 +1,27 @@
+domain: covid.tracker.io
+layout:
+- go.kubebuilder.io/v3
+plugins:
+  manifests.sdk.operatorframework.io/v2: {}
+  scorecard.sdk.operatorframework.io/v2: {}
+projectName: covid-tracker
+repo: covid.tracker.io
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: covid.tracker.io
+  group: covid
+  kind: CovidTrackerDeployment
+  path: covid.tracker.io/api/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: covid.tracker.io
+  group: covid
+  kind: CovidData
+  path: covid.tracker.io/api/v1alpha1
+  version: v1alpha1
+version: "3"

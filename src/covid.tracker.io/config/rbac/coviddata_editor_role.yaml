@@ -1,0 +1,24 @@
+# permissions for end users to edit coviddata.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: coviddata-editor-role
+rules:
+- apiGroups:
+  - covid.covid.tracker.io
+  resources:
+  - coviddata
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - covid.covid.tracker.io
+  resources:
+  - coviddata/status
+  verbs:
+  - get

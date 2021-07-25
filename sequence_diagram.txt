@@ -1,0 +1,29 @@
+# https://sequencediagram.org
+
+title k8s CR example
+
+actor User
+participant "CovidTrackerDeployment CR" as ctd
+participant "CovidTrackerDeployment Controller" as ctdc
+participant "CovidData Daemonset" as cdd
+participant "<color:#white>CovidViewer Pod</color>" as cvp#purple
+participant "CovidData CR" as cd
+participant Client
+
+note right of User: CovidDataViewer CR and CovidData CR installed;\nCovidData Controller started
+==k8s cluster scope==
+ctdc--#cyan:4>ctd: watch
+group #2f2e7b Viwer deployment #white
+User-#00ff00>ctd: apply CovidViewer Deployment CR
+ctdc->*cdd: deploy
+cdd->*cvp: create
+note over cvp: API services for viewer Covid Data
+end
+
+group #lightpurple Collecting Data #white
+User-#00ff00>Client: Enter Covid Data
+Client->*cd: create/update
+end
+
+cvp->cd: view
+
