@@ -1,4 +1,4 @@
 pkg/
 src/covid.tracker.io/bin/controller-gen
 src/covid.tracker.io/bin/kustomize
-src/covid.tracker.io/cmd/publish-covid-data
+src/covid.tracker.io/cmd/publish-covid-data/publish-covid-data
