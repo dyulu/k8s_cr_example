@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
@@ -142,17 +143,31 @@ func (r *CovidTrackerDeploymentReconciler) reconcileCovidDaemonSet(ctx context.C
 
 					Containers: []corev1.Container{
 						{
-							Name:            CovidContainerName,
-							Image:           deploymentCR.Spec.Images.CovidDataAPI,
-							ImagePullPolicy: "IfNotPresent",
-							//ImagePullPolicy: corev1.PullPolicy(cmdhelpers.GetAllConfigEnv()[cmdhelpers.PULL_POLICY]),
+							Name:  CovidContainerName,
+							Image: deploymentCR.Spec.Images.CovidDataAPI,
+							// ImagePullPolicy: "IfNotPresent", // One of Always, Never, IfNotPresent
+							// export IMAGE_PULL_POLICY=IfNotPresent
+							ImagePullPolicy: corev1.PullPolicy(os.Getenv("IMAGE_PULL_POLICY")),
 							SecurityContext: &corev1.SecurityContext{
 								Privileged: &privileged,
 							},
 							Env: []corev1.EnvVar{
 								{
-									Name:  "COUNTRY",
-									Value: "USA",
+									Name: "COUNTRY",
+									// Value: "USA",
+									// kubectl create configmap covid-data-country --from-literal=country=USA
+									// OR
+									// kubectl create configmap covid-data-country --from-env-file covid-data-country.properties
+									// File covid-data-country.properties contents: country=USA
+									ValueFrom: &corev1.EnvVarSource{
+										ConfigMapKeyRef: &corev1.ConfigMapKeySelector{
+											LocalObjectReference: corev1.LocalObjectReference{
+												Name: "covid-data-country",
+											},
+											Key:      "country",
+											Optional: new(bool), // Default to false
+										},
+									},
 									// ValueFrom: &corev1.EnvVarSource{
 									//    FieldRef: &corev1.ObjectFieldSelector{
 									//        FieldPath: "spec.nodeName",
@@ -181,13 +196,14 @@ func (r *CovidTrackerDeploymentReconciler) reconcileCovidDaemonSet(ctx context.C
 		if errors.IsNotFound(err) {
 			// Daemonset does not exist -- create it
 			log.Info("Creating covid daemonset")
+
+			// Set deployment CR instance as the owner and controller
+			ctrl.SetControllerReference(deploymentCR, dsObject, r.Scheme)
+
 			err = r.Create(ctx, dsObject)
 			if err != nil {
 				return fmt.Errorf("Unexpected error creating covid daemonset: %v", err)
 			}
-
-			// Set deployment CR instance as the owner and controller
-			ctrl.SetControllerReference(deploymentCR, dsObject, r.Scheme)
 
 			log.Info("Created covid daemonset")
 		} else {
